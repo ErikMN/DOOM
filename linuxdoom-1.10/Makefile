@@ -1,95 +1,79 @@
-################################################################
-#
-# $Id:$
-#
-# $Log:$
-#
-CC=  gcc  # gcc or g++
+CC = gcc
+PROGS = linuxxdoom
+LDLIBS = -lm -lnsl -lXext
 
-CFLAGS=-g -Wall -DNORMALUNIX -DLINUX # -DUSEASM 
-LDFLAGS=-L/usr/X11R6/lib
-LIBS=-lXext -lX11 -lnsl -lm
+PKGS += x11
+ifdef PKGS
+	LDLIBS += $(shell pkg-config --libs $(PKGS))
+	CFLAGS += $(shell pkg-config --cflags $(PKGS))
+endif
 
-# subdirectory for objects
-O=linux
+SRCS = $(wildcard *.c)
+OBJS = $(SRCS:.c=.o)
+CFLAGS += -Werror
 
-# not too sophisticated dependency
-OBJS=				\
-		$(O)/doomdef.o		\
-		$(O)/doomstat.o		\
-		$(O)/dstrings.o		\
-		$(O)/i_system.o		\
-		$(O)/i_sound.o		\
-		$(O)/i_video.o		\
-		$(O)/i_net.o			\
-		$(O)/tables.o			\
-		$(O)/f_finale.o		\
-		$(O)/f_wipe.o 		\
-		$(O)/d_main.o			\
-		$(O)/d_net.o			\
-		$(O)/d_items.o		\
-		$(O)/g_game.o			\
-		$(O)/m_menu.o			\
-		$(O)/m_misc.o			\
-		$(O)/m_argv.o  		\
-		$(O)/m_bbox.o			\
-		$(O)/m_fixed.o		\
-		$(O)/m_swap.o			\
-		$(O)/m_cheat.o		\
-		$(O)/m_random.o		\
-		$(O)/am_map.o			\
-		$(O)/p_ceilng.o		\
-		$(O)/p_doors.o		\
-		$(O)/p_enemy.o		\
-		$(O)/p_floor.o		\
-		$(O)/p_inter.o		\
-		$(O)/p_lights.o		\
-		$(O)/p_map.o			\
-		$(O)/p_maputl.o		\
-		$(O)/p_plats.o		\
-		$(O)/p_pspr.o			\
-		$(O)/p_setup.o		\
-		$(O)/p_sight.o		\
-		$(O)/p_spec.o			\
-		$(O)/p_switch.o		\
-		$(O)/p_mobj.o			\
-		$(O)/p_telept.o		\
-		$(O)/p_tick.o			\
-		$(O)/p_saveg.o		\
-		$(O)/p_user.o			\
-		$(O)/r_bsp.o			\
-		$(O)/r_data.o			\
-		$(O)/r_draw.o			\
-		$(O)/r_main.o			\
-		$(O)/r_plane.o		\
-		$(O)/r_segs.o			\
-		$(O)/r_sky.o			\
-		$(O)/r_things.o		\
-		$(O)/w_wad.o			\
-		$(O)/wi_stuff.o		\
-		$(O)/v_video.o		\
-		$(O)/st_lib.o			\
-		$(O)/st_stuff.o		\
-		$(O)/hu_stuff.o		\
-		$(O)/hu_lib.o			\
-		$(O)/s_sound.o		\
-		$(O)/z_zone.o			\
-		$(O)/info.o				\
-		$(O)/sounds.o
+CFLAGS += -Wno-error=implicit-int \
+          -Wno-error=int-to-pointer-cast \
+          -Wno-error=pointer-to-int-cast \
+          -Wno-error=deprecated-declarations \
+          -Wno-error=format-overflow
+CFLAGS += -DNORMALUNIX -DLINUX
 
-all:	 $(O)/linuxxdoom
+MAKEFLAGS=" -j $(nproc)"
+
+# FINAL=y
+ifeq ($(FINAL), y)
+	LDFLAGS += -s
+	CFLAGS += -DNDEBUG -g0 -O2
+	CFLAGS += -Wpedantic -Wextra -Wmaybe-uninitialized
+	CFLAGS += -W -Wformat=2 -Wpointer-arith -Wbad-function-cast
+	CFLAGS += -Wstrict-prototypes -Wmissing-prototypes -Winline
+	CFLAGS += -Wdisabled-optimization -Wfloat-equal -Wall
+else
+	# ASAN=y
+	CFLAGS += -g3 -DDEBUG
+	ifeq ($(ASAN), y)
+		CFLAGS += -fsanitize=address -O1 -fno-omit-frame-pointer
+		LDLIBS += -fsanitize=address
+	endif
+endif
+
+.PHONY: all debug run cppcheck valgrind xephyr clean
+all: $(PROGS)
+
+debug:
+	@echo "*** Debug info:"
+	@echo "Source-files:" $(SRCS)
+	@echo "Object-files:" $(OBJS)
+	@echo "Compiler-flags:" $(CFLAGS)
+	@echo "Linker-flags:" $(LDFLAGS)
+	@echo "Linker-libs:" $(LDLIBS)
+
+$(PROGS): $(OBJS)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+xephyr:
+	@Xephyr :2 -ac -screen 640x480x8
+
+run: $(PROGS)
+	@DISPLAY=:2 ./$(PROGS) -2
+
+cppcheck:
+	@echo "*** Static code analysis"
+	@cppcheck $(shell find . -name "*.[ch]") \
+		--verbose --enable=all -DDEBUG=1 \
+		--suppress=missingIncludeSystem \
+		--suppress=unknownMacro \
+		--suppress=unusedFunction
+
+valgrind: $(PROGS)
+	@valgrind \
+		--tool=memcheck \
+		--leak-check=yes \
+		--show-reachable=yes \
+		--num-callers=20 \
+		--track-fds=yes \
+		./$(PROGS)
 
 clean:
-	rm -f *.o *~ *.flc
-	rm -f linux/*
-
-$(O)/linuxxdoom:	$(OBJS) $(O)/i_main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(O)/i_main.o \
-	-o $(O)/linuxxdoom $(LIBS)
-
-$(O)/%.o:	%.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-#############################################################
-#
-#############################################################
+	$(RM) $(PROGS) $(OBJS)

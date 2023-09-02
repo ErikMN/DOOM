@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "*.txt": "txt",
+    "*.h": "c",
+    "*.c": "c"
+  },
+  "files.trimTrailingWhitespace": false,
+}

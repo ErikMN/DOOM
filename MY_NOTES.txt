@@ -1,0 +1,18 @@
+Making it build on modern PC
+============================
+
+https://www.youtube.com/watch?v=9JgQfQHHhTw
+
+// Xephyr is an X server that can be run inside another X server:
+sudo apt install xserver-xephyr
+
+// In one terminal:
+Xephyr :2 -ac -screen 640x480x8
+
+// In another terminal:
+DISPLAY=:2 ./linuxxdoom -2
+
+// DOOM1.WAD is the IWAD used by the shareware version of Doom.
+https://doomwiki.org/wiki/DOOM1.WAD
+
+Don't forget to unset DOOMWADDIR
