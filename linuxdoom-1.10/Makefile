@@ -1,8 +1,8 @@
 CC = gcc
 PROGS = linuxxdoom
-LDLIBS = -lm -lXext
+LDLIBS = -lm
 
-PKGS += x11
+# PKGS += my-pkgs
 ifdef PKGS
 	LDLIBS += $(shell pkg-config --libs $(PKGS))
 	CFLAGS += $(shell pkg-config --cflags $(PKGS))
@@ -54,9 +54,6 @@ debug:
 
 $(PROGS): $(OBJS)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
-
-xephyr:
-	@Xephyr :2 -ac -screen 640x480x8
 
 run: $(PROGS)
 	@DISPLAY=:2 ./$(PROGS) -2
