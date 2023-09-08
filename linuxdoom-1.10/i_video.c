@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // $Id:$
@@ -40,9 +40,9 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <netinet/in.h> 
+#include <netinet/in.h>
 #include <errno.h>
-#include <signal.h> 
+#include <signal.h>
 #endif
 
 #include "doomstat.h"
@@ -126,12 +126,29 @@ void I_UpdateNoBlit (void)
 }
 
 byte cur_palette [ 768 ] ;
+void SaveRGBScreenshot(unsigned char *buffer) {
+    static int counter = 0;
+    char filename[64];
+    snprintf(filename, sizeof(filename), "/tmp/doom/screenshot%d.rgb", counter++);
+
+    FILE *file = fopen(filename, "wb");
+    if (!file) return;
+
+    // Convert and write out as 24-bit RGB
+    for (int i = 0; i < 320 * 200; i++) {
+        unsigned char index = buffer[i];
+        fwrite(&cur_palette[index * 3], 3, 1, file);  // Write RGB triple
+    }
+
+    fclose(file);
+}
 
 //
 // I_FinishUpdate
 //
 void I_FinishUpdate (void)
 {
+    SaveRGBScreenshot(screens[0]);
 }
 
 
@@ -168,11 +185,11 @@ void I_InitGraphics(void)
     int			pnum;
     int			x=0;
     int			y=0;
-    
+
     // warning: char format, different type arg
     char		xsign=' ';
     char		ysign=' ';
-    
+
     int			oktodraw;
     unsigned long	attribmask;
     int			valuemask;
