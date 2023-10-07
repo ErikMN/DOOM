@@ -1,4 +1,5 @@
 linux
 linuxxdoom
+sndserver
 *.o
 *.dsg

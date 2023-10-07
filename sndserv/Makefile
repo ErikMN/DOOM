@@ -1,39 +1,82 @@
-##########################################################
-#
-# $Id:$
-#
-# $Log:$
-#
-#
+CC = gcc
+PROGS = sndserver
+LDLIBS = -lm
 
-CC=gcc
-CFLAGS=-O -DNORMALUNIX -DLINUX
-LDFLAGS=
-LIBS=-lm
+# PKGS += mylib
+ifdef PKGS
+	LDLIBS += $(shell pkg-config --libs $(PKGS))
+	CFLAGS += $(shell pkg-config --cflags $(PKGS))
+endif
 
-O=linux
+SRCS = $(wildcard *.c)
+OBJS = $(SRCS:.c=.o)
+CFLAGS += -Werror
+# CFLAGS += -Wvla
+# CFLAGS += -std=c99
 
-all:	 $(O)/sndserver
+CFLAGS += -DNORMALUNIX -DLINUX
 
+# FINAL=y
+# ASAN=y
+ifeq ($(FINAL), y)
+	LDFLAGS += -s
+	CFLAGS += -DNDEBUG -g0 -O2
+	CFLAGS += -Wpedantic -Wextra -Wmaybe-uninitialized
+	CFLAGS += -W -Wformat=2 -Wpointer-arith -Wbad-function-cast
+	CFLAGS += -Wstrict-prototypes -Wmissing-prototypes -Winline
+	CFLAGS += -Wdisabled-optimization -Wfloat-equal -Wall
+else
+	CFLAGS += -g3 -DDEBUG
+	ifeq ($(ASAN), y)
+		CFLAGS += -fsanitize=address -O1 -fno-omit-frame-pointer
+		LDLIBS += -fsanitize=address
+		CFLAGS += -O1
+	endif
+endif
+
+.PHONY: all
+all: $(PROGS)
+
+.PHONY: debug
+debug:
+	@echo "*** Debug info:"
+	@echo "Source-files:" $(SRCS)
+	@echo "Object-files:" $(OBJS)
+	@echo "Compiler-flags:" $(CFLAGS)
+	@echo "Linker-flags:" $(LDFLAGS)
+	@echo "Linker-libs:" $(LDLIBS)
+
+$(PROGS): $(OBJS)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+.PHONY: run
+run: $(PROGS)
+	@./$(PROGS)
+
+.PHONY: valgrind
+valgrind: $(PROGS)
+	@valgrind \
+		--tool=memcheck \
+		--leak-check=yes \
+		--show-reachable=yes \
+		--num-callers=20 \
+		--track-fds=yes \
+		./$(PROGS)
+
+.PHONY: cppcheck
+cppcheck:
+	@echo "*** Static code analysis"
+	@cppcheck $(shell find . -name "*.[ch]") \
+		--verbose --enable=all -DDEBUG=1 \
+		--suppress=missingIncludeSystem \
+		--suppress=unusedFunction
+
+.PHONY: indent
+indent:
+	@echo "*** Formatting code"
+	@clang-format $(shell find . -name "*.[ch]") \
+		-style=file -i -fallback-style=none
+
+.PHONY: clean
 clean:
-	rm -f *.o *~ *.flc
-	rm -f linux/*
-
-# Target
-$(O)/sndserver: \
-	$(O)/soundsrv.o \
-	$(O)/sounds.o \
-	$(O)/wadread.o \
-	$(O)/linux.o
-	$(CC) $(CFLAGS) $(LDFLAGS) \
-	$(O)/soundsrv.o \
-	$(O)/sounds.o \
-	$(O)/wadread.o \
-	$(O)/linux.o -o $(O)/sndserver $(LIBS)
-	echo make complete.
-
-# Rule
-$(O)/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-
+	$(RM) $(PROGS) $(OBJS)

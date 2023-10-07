@@ -5,14 +5,25 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "DEBUG",
+      "name": "DEBUG DOOM",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/linuxdoom-1.10/linuxxdoom",
-      "args": [],
+      "args": [
+        "-2"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "environment": [],
+      "environment": [
+        {
+          "name": "DOOMWADDIR",
+          "value": "${workspaceFolder}/linuxdoom-1.10/"
+        },
+        {
+          "name": "DISPLAY",
+          "value": ":2"
+        }
+      ],
       "externalConsole": false,
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
@@ -25,15 +36,26 @@
       ]
     },
     {
-      "name": "DEBUG COREDUMP",
+      "name": "DEBUG DOOM COREDUMP",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/linuxdoom-1.10/linuxxdoom",
       "coreDumpPath": "${workspaceFolder}/core",
-      "args": [],
+      "args": [
+        "-2"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "environment": [],
+      "environment": [
+        {
+          "name": "DOOMWADDIR",
+          "value": "${workspaceFolder}/linuxdoom-1.10/"
+        },
+        {
+          "name": "DISPLAY",
+          "value": ":2"
+        }
+      ],
       "externalConsole": false,
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
@@ -44,6 +66,31 @@
           "ignoreFailures": true
         }
       ]
-    }
+    },
+    {
+      "name": "DEBUG SNDSERV",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/sndserv/sndserver",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "DOOMWADDIR",
+          "value": "${workspaceFolder}/sndserv/"
+        }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
   ]
 }
