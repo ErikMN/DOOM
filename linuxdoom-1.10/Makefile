@@ -19,6 +19,9 @@ CFLAGS += -Wno-error=implicit-int \
           -Wno-error=format-overflow
 CFLAGS += -DNORMALUNIX -DLINUX
 
+# Enable the sound server:
+CFLAGS += -DSNDSERV
+
 MAKEFLAGS=" -j $(nproc)"
 
 # FINAL=y
