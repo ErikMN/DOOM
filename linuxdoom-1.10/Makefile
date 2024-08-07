@@ -1,6 +1,6 @@
 CC = gcc
 PROGS = linuxxdoom
-LDLIBS = -lm -lnsl -lXext
+LDLIBS = -lm -lXext
 
 PKGS += x11
 ifdef PKGS
