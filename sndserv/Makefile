@@ -1,37 +1,51 @@
-CC = gcc
 PROGS = sndserver
 LDLIBS = -lm
 
-# PKGS += mylib
+PKGS += libpipewire-0.3 libspa-0.2
 ifdef PKGS
-	LDLIBS += $(shell pkg-config --libs $(PKGS))
-	CFLAGS += $(shell pkg-config --cflags $(PKGS))
+  LDLIBS += $(shell pkg-config --libs $(PKGS))
+  CFLAGS += $(shell pkg-config --cflags $(PKGS))
 endif
 
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
-CFLAGS += -Werror
-# CFLAGS += -Wvla
-# CFLAGS += -std=c99
 
-CFLAGS += -DNORMALUNIX -DLINUX
+# Enable all warnings:
+CFLAGS += -Wall
 
-# FINAL=y
+# TODO: Extra warnings:
+# CFLAGS += -Werror
+CFLAGS += -W
+CFLAGS += -Wextra
+# CFLAGS += -Wpedantic
+CFLAGS += -Wmissing-prototypes
+CFLAGS += -Wstrict-prototypes
+CFLAGS += -Wvla
+CFLAGS += -Wformat=2
+CFLAGS += -Wmaybe-uninitialized
+CFLAGS += -Wunused-parameter
+CFLAGS += -Wunused-but-set-parameter
+CFLAGS += -Wpointer-arith
+CFLAGS += -Wfloat-equal
+CFLAGS += -Wdisabled-optimization
+# CFLAGS += -Winline
+# CFLAGS += -Wbad-function-cast
+
+# NOTE: Disabled warnings:
+CFLAGS += -Wno-sign-compare
+
+FINAL ?= y
 # ASAN=y
 ifeq ($(FINAL), y)
-	LDFLAGS += -s
-	CFLAGS += -DNDEBUG -g0 -O2
-	CFLAGS += -Wpedantic -Wextra -Wmaybe-uninitialized
-	CFLAGS += -W -Wformat=2 -Wpointer-arith -Wbad-function-cast
-	CFLAGS += -Wstrict-prototypes -Wmissing-prototypes -Winline
-	CFLAGS += -Wdisabled-optimization -Wfloat-equal -Wall
+  LDFLAGS += -s
+  CFLAGS += -DNDEBUG -g0 -O2
 else
-	CFLAGS += -g3 -DDEBUG
-	ifeq ($(ASAN), y)
-		CFLAGS += -fsanitize=address -O1 -fno-omit-frame-pointer
-		LDLIBS += -fsanitize=address
-		CFLAGS += -O1
-	endif
+  CFLAGS += -g3 -DDEBUG
+  ifeq ($(ASAN), y)
+    CFLAGS += -fsanitize=address -O1 -fno-omit-frame-pointer
+    LDLIBS += -fsanitize=address
+    CFLAGS += -O1
+  endif
 endif
 
 .PHONY: all
@@ -80,3 +94,7 @@ indent:
 .PHONY: clean
 clean:
 	$(RM) $(PROGS) $(OBJS)
+
+.PHONY: channelplay
+channelplay:
+	@cat channel.raw | pw-cat --playback --rate=11025 --channels=1 --format=u8 -
